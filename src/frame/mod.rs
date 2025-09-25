@@ -226,7 +226,7 @@ type MessageCount = u16;
 pub enum Response<'r> {
     ReadCoils(Coils<'r>),
     ReadDiscreteInputs(Coils<'r>),
-    WriteSingleCoil(Address),
+    WriteSingleCoil(Address, Coil),
     WriteMultipleCoils(Address, Quantity),
     ReadInputRegisters(Data<'r>),
     ReadHoldingRegisters(Data<'r>),
@@ -291,7 +291,7 @@ impl<'r> From<Response<'r>> for FunctionCode {
         match r {
             R::ReadCoils(_) => Self::ReadCoils,
             R::ReadDiscreteInputs(_) => Self::ReadDiscreteInputs,
-            R::WriteSingleCoil(_) => Self::WriteSingleCoil,
+            R::WriteSingleCoil(_, _) => Self::WriteSingleCoil,
             R::WriteMultipleCoils(_, _) => Self::WriteMultipleCoils,
             R::ReadInputRegisters(_) => Self::ReadInputRegisters,
             R::ReadHoldingRegisters(_) => Self::ReadHoldingRegisters,
@@ -384,7 +384,7 @@ impl Response<'_> {
     pub const fn pdu_len(&self) -> usize {
         match *self {
             Self::ReadCoils(coils) | Self::ReadDiscreteInputs(coils) => 2 + coils.packed_len(),
-            Self::WriteSingleCoil(_) => 3,
+            Self::WriteSingleCoil(_, _) => 5,
             Self::WriteMultipleCoils(_, _)
             | Self::WriteMultipleRegisters(_, _)
             | Self::WriteSingleRegister(_, _) => 5,
@@ -487,7 +487,7 @@ mod tests {
                 }),
                 2,
             ),
-            (WriteSingleCoil(0x0), 5),
+            (WriteSingleCoil(0x0, false), 5),
             (WriteMultipleCoils(0x0, 0x0), 0x0F),
             (
                 ReadInputRegisters(Data {

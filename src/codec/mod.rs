@@ -189,7 +189,10 @@ impl<'r> TryFrom<&'r [u8]> for Response<'r> {
                     _ => unreachable!(),
                 }
             }
-            F::WriteSingleCoil => Self::WriteSingleCoil(BigEndian::read_u16(&bytes[1..])),
+            F::WriteSingleCoil => Self::WriteSingleCoil(
+                BigEndian::read_u16(&bytes[1..3]),
+                BigEndian::read_u16(&bytes[3..4]) == 1,
+            ),
 
             F::WriteMultipleCoils | F::WriteSingleRegister | F::WriteMultipleRegisters => {
                 let addr = BigEndian::read_u16(&bytes[1..]);
@@ -304,8 +307,9 @@ impl Encode for Response<'_> {
                 buf[1] = (registers.len() * 2) as u8;
                 registers.copy_to(&mut buf[2..]);
             }
-            Self::WriteSingleCoil(address) => {
-                BigEndian::write_u16(&mut buf[1..], *address);
+            Self::WriteSingleCoil(address, value) => {
+                BigEndian::write_u16(&mut buf[1..3], *address);
+                BigEndian::write_u16(&mut buf[3..5], u16::from(*value));
             }
             Self::WriteMultipleCoils(address, payload)
             | Self::WriteMultipleRegisters(address, payload)
