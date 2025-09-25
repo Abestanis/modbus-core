@@ -309,7 +309,8 @@ impl Encode for Response<'_> {
             }
             Self::WriteSingleCoil(address, value) => {
                 BigEndian::write_u16(&mut buf[1..3], *address);
-                BigEndian::write_u16(&mut buf[3..5], u16::from(*value));
+                buf[3] = if *value { 0xFF } else { 0 };
+                buf[4] = 0;
             }
             Self::WriteMultipleCoils(address, payload)
             | Self::WriteMultipleRegisters(address, payload)
